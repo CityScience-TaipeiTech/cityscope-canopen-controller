@@ -1,0 +1,9 @@
+[Unit]
+Description=Automatic setup SocketCAN after system booted and device pluged.
+
+[Service]
+Type=simple
+ExecStart=/etc/systemd/xavier_can.sh
+
+[Install]
+WantedBy=multi-user.target
