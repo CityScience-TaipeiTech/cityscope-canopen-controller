@@ -1,0 +1,20 @@
+[proximity]
+config_file = "/home/cityscpe/Downloads/cityscope-firmware-main/cityscope_proximity_controller/DS301_profile_mcu.eds"
+
+[[proximity.nodes]]
+node_id = 10
+[[proximity.nodes.transform]]
+x = 30
+y = 0
+
+[[proximity.nodes]]
+node_id = 11
+[[proximity.nodes.transform]]
+x = 60
+y = 0
+
+# [[device.proximity]]
+# node_id = 12
+# [[device.proximity.transform]]
+# x = 90
+# y = 0
