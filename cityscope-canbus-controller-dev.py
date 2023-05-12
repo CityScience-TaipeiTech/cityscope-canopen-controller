@@ -34,6 +34,8 @@ class CsCanOpen:
         self.prox_right = {"node_id": 11, "distance": 300}
         self.timer = None
         self.toward_direction = None
+        self.MODE = "LOOP" # default
+        self.prox_dict = {'right': 0, 'left': 0}
 
     def load_config(self, config_file):
         with open(config_file, "rb") as f:
@@ -55,60 +57,46 @@ class CsCanOpen:
 
     def proximity_callback(self, msg):
         node_id = msg.cob_id - 384
-        if node_id not in self.prox_active:
-            pass
-        for var in msg:            
-            print(str(node_id)+' : %s = %d cm' % (var.name, var.raw))
-
-            # if var.raw > 20: 
-            #     continue
-
-            # now right is 11, left is 10
-            # no interuppt is usually 200 cm
+        for var in msg:
             if node_id == 11:                
-                self.prox_right = {"node_id": node_id, "distance": var.raw}                            
+                self.prox_right = {"node_id": node_id, "distance": var.raw}    
+                
+                if var.raw < 20:
+                    self.prox_dict['right'] = 1
 
             elif node_id == 10:
-                self.prox_left = {"node_id": node_id, "distance": var.raw}                                
+                self.prox_left = {"node_id": node_id, "distance": var.raw}     
+
+                if var.raw < 20:
+                    self.prox_dict['left'] = 1                                            
             
-        # self.prox_active
+        # self.prox_active    
 
     @sio.event
     def swap_event_watcher(self):
         while True:
-            current_time = time.time()
+            if self.prox_dict['right'] == 1 and self.prox_dict['left'] == 1:
+                self.prox_dict['right'] = 0
+                self.prox_dict['left'] = 0
 
-            # pass the scene someone close to two sensors at one time
-            if self.prox_right["distance"] and self.prox_left["distance"] <= 20:
-                continue
+            if self.prox_dict['left'] == 1:
+                sio.emit('GESTURE', 'SWAP_LEFT')
+                print('swap left')
+                self.prox_dict['left'] = 0
+
+            if self.prox_dict['right'] == 1:
+                sio.emit('GESTURE', 'SWAP_RIGHT')
+                print('swap right')
+                self.prox_dict['right'] = 0
             
-            # if more five sec there no new prox then reset the timer
-            if self.timer and current_time - self.timer > 5:
-                self.timer = None
-                self.toward_direction = None
-                sio.emit("GESTURE", "LOOP_PLAY")
-
-            # swap event condition is activated
-            if self.timer:
-                if self.toward_direction == "LEFT" and self.prox_left["distance"] <= 20:                    
-                    sio.emit("GESTURE", "SWAP_LEFT")
-
-                elif self.toward_direction == "RIGHT" and self.prox_right["distance"] <= 20:
-                    sio.emit("GESTURE", "SWAP_RIGHT")
-
-            if self.prox_right["distance"] <= 20:
-                self.timer = time.time()                
-                self.toward_direction = "LEFT"
-
-            elif self.prox_left["distance"] <= 20:
-                self.timer = time.time()
-                self.toward_direction = "RIGHT"
+            time.sleep(0.5)        
     
     def disconnect(self):
         self.can_network.disconnect()
 
 def main():    
-    sio.connect('http://127.0.0.1:2567')
+    # sio.connect('http://127.0.0.1:5010')
+    sio.connect('ws://10.100.1.51:5010')
     cs_canopen = CsCanOpen("can0", "./tw-island-dev.toml")
     cs_canopen.swap_event_watcher()
     
