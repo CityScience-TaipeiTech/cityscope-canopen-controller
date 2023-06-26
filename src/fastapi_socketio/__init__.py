@@ -1,1 +1,1 @@
-from .socket_manager import SocketManager
+from .sock_manager import SocketManager
