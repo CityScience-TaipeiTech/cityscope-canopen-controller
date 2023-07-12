@@ -33,8 +33,11 @@ class CsCanOpen:
         self.light_node_list = []
 
         self.control_id = 0
-        self.pre_control_id = 1
+        self.pre_control_id = 0
         self.control_id_temp = 0
+
+        self.led_change = False
+        self.led_flag = False
 
         self.send_key = False
         self.start_time = 0
@@ -89,52 +92,40 @@ class CsCanOpen:
     def proximity_callback(self, msg):
         node_id = msg.cob_id - 384
         for var in msg:
-            if self.message_key:
-                print(node_id, " : ", var.raw)
-            if var.raw < 15:
-                self.control_id = node_id
-                if not self.send_key:
-                    self.control_id_temp = self.control_id
-                    self.start_time = time.time()
-                    self.send_key = True
+            # print(node_id, " : ", var.raw)
+            if var.raw < 15 and self.send_key == 0:
+                self.control_id_temp = node_id
+                self.send_key = 1
+                self.start_time = time.time()
+            elif var.raw > 15 and node_id == self.control_id_temp:
+                self.send_key = 0
 
-        if self.send_key and (time.time() - self.start_time) > 4 and self.control_id == self.control_id_temp:
-            if self.control_id != 0 and self.control_id != self.pre_control_id:
-                print(self.control_id, " was control node")
-                self.message_key = False
-                for light_node in self.light_node_list:
-                    light_node.rpdo[1][0x6001].phys = self.control_id
-                    light_node.rpdo[1].start(0.2)
-                    light_node.nmt.state = 'OPERATIONAL'
-                self.pre_control_id = self.control_id
-                self.control_id = 0
-                self.map_control = True
-                self.send_key = False
-        elif (time.time() - self.start_time) > 1.5 and self.control_id != self.control_id_temp:
-            self.control_id = 0
-            self.control_id_temp = 0
-            self.send_key = False
-            print('control node reset error: wrong node')
+            if self.map_control == 1 and (time.time() - self.start_time) > 2 and self.send_key == 1:
+                if self.control_id_temp == self.control_id + 1 or (self.control_id_temp == 43 and self.control_id == 10):
+                    self.prox_dict['right'] = 1
+                    self.send_key = 0
+                elif self.control_id_temp == self.control_id - 1 or (self.control_id_temp == 10 and self.control_id == 43):
+                    self.prox_dict['left'] = 1
+                    self.send_key = 0
+                elif self.control_id_temp == self.control_id and (time.time() - self.start_time) > 3:
+                    self.send_key = 0
+                    self.map_control = 0
+                    self.control_id_temp = 0
+                    print('release control')
+                    for light_node in self.light_node_list:
+                        light_node.rpdo[1][0x6001].phys = 0
+                        light_node.rpdo[1].start(0.2)
 
-        if self.map_control and (time.time() - self.start_time) > 2:
-            if self.control_id == self.pre_control_id + 1:
-                self.prox_dict['right'] = 1
-                print(self.control_id, ' right swap')
-                self.control_id = 0
-            elif self.control_id == self.pre_control_id - 1:
-                self.prox_dict['left'] = 1
-                print(self.control_id, ' left swap')
-                self.control_id = 0
-            elif self.control_id == self.pre_control_id:
-                print(self.control_id, " release control")
-                self.message_key = True
-                for light_node in self.light_node_list:
-                    light_node.rpdo[1][0x6001].phys = 0x00
-                    light_node.rpdo[1].start(0.2)
-                self.control_id = 0
-                self.pre_control_id = 1
-                self.map_control = False
-            self.send_key = False
+            if self.send_key == 1 and (time.time() - self.start_time) > 3 and self.map_control == 0:
+                if self.control_id_temp != 13 and self.control_id_temp != 14 and self.control_id_temp != 18 and self.control_id_temp != 19 and self.control_id_temp != 30 and self.control_id_temp != 31 and self.control_id_temp != 35 and self.control_id_temp != 36:
+                    self.control_id = self.control_id_temp
+                    self.send_key = 0
+                    print(self.control_id)
+                    self.led_change = not self.led_change
+                    self.map_control = True
+                    for light_node in self.light_node_list:
+                        light_node.rpdo[1][0x6001].phys = self.control_id
+                        light_node.rpdo[1].start(0.2)
 
     @sio.event
     def swap_event_watcher(self):

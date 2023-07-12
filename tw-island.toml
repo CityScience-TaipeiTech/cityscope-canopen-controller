@@ -4,7 +4,8 @@ active_dis = 50 # in cm
 [proximity]
 config_file = "./eds/DS301_profile_mcu.eds"
 
-
+[light]
+config_file = "/DS301_profile_mcu.eds"
 [[proximity.nodes]]
 node_id = 10
 [[proximity.nodes.transform]]
@@ -90,20 +91,5 @@ node_id = 23
 x = 2.0
 y = 1.7
 
-[[proximity.nodes]]
-node_id = 24
-[[proximity.nodes.transform]]
-x = 2.3
-y = 1.7
-
-[[proximity.nodes]]
-node_id = 25
-[[proximity.nodes.transform]]
-x = 2.6
-y = 1.7
-
-[[proximity.nodes]]
-node_id = 26
-[[proximity.nodes.transform]]
-x = 2.9
-y = 1.7
+[[light.nodes]]
+node_id = 83

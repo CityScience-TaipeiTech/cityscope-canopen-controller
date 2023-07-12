@@ -13,12 +13,14 @@ class CsCanOpen:
         self.light_node_list = []
         self.control_id = 0
         self.pre_control_id = 1
-        self.send_key = False
+        self.send_key = 0
         self.start = 0
         self.config = self.load_config(config_file)
         self.can_network = self.canopen_init(can_interface)
         self.load_light_nodes(self.config["light"])
         self.load_prox_nodes(self.config["proximity"])
+
+        self.ledSwitch = False
 
     def load_config(self, config_file):
         with open(config_file, "rb") as f:
@@ -56,36 +58,31 @@ class CsCanOpen:
         node_id = msg.cob_id - 384
         for var in msg:
             print(node_id, " : ", var.raw)
-            if var.raw < 15:
-                self.control_id = node_id
-                if not self.send_key:
-                    self.start = time.time()
-                    self.send_key = True
-        if self.send_key and (time.time() - self.start) > 4:
-            if self.control_id != 0 and self.control_id != self.pre_control_id:
-                print(self.control_id, "sending message")
-                for light_node in self.light_node_list:
-                    light_node.nmt.state = 'PRE-OPERATIONAL'
-                    light_node.rpdo[1][0x6001].phys = self.control_id
-                    light_node.rpdo[1].start(0.2)
-                    light_node.nmt.state = 'OPERATIONAL'
-                self.pre_control_id = self.control_id
-                self.control_id = 0
-            elif self.control_id == self.pre_control_id:
-                print("reset")
-                for light_node in self.light_node_list:
-                    light_node.rpdo[1][0x6001].phys = 0x00
-                    light_node.rpdo[1].start(0.2)
-                self.control_id = 0
-                self.pre_control_id = 1
-            self.send_key = False
+            if var.raw < 15 and self.send_key == 0:
+                self.start = time.time()
+                self.send_key = 1
+            elif var.raw > 15:
+                self.send_key = 0
+        if self.send_key == 1 and (time.time() - self.start) > 4:
+            self.control_id = node_id
+            self.ledSwitch = not self.ledSwitch
+            self.send_key = 0
+            
+        print(self.ledSwitch, self.send_key)
+        for light_node in self.light_node_list:
+            if self.ledSwitch:
+                light_node.rpdo[1][0x6001].phys = self.control_id
+                light_node.rpdo[1].start(0.2)
+            else:
+                light_node.rpdo[1][0x6001].phys = 0x00
+                light_node.rpdo[1].start(0.2)
 
     def disconnect(self):
         self.can_network.disconnect()
 
 
 def main():
-    cs_canopen = CsCanOpen("can0", "./walker_tw_island.toml")
+    cs_canopen = CsCanOpen("can0", "./test.toml")
     while True:
         time.sleep(0.2)
     return

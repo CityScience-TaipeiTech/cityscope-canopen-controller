@@ -11,11 +11,10 @@ def main():
     network.connect(channel="can0", bustype='socketcan')
     node = network.add_node(
         81, '/home/cityscpe/cityscope-canopen-controller/DS301_profile_mcu.eds')
-    print(node)
     node.rpdo.read()
     node.nmt.state = 'PRE-OPERATIONAL'
     # print(node.rpdo.len())
-    node.rpdo[1][0x6001].phys = 33
+    node.rpdo[1][0x6001].phys = 0
     node.rpdo[1].start(0.1)
     node.nmt.state = 'OPERATIONAL'
     return
