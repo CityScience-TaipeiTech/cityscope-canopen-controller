@@ -1,11 +1,12 @@
 #!/usr/bin/python3
-# sudo ifconfig can0 txqueuelen 10000
+# sudo ifconfig can0 txqueuelen 100000
 # sudo ip link set can0 up type can bitrate 1000000
+#pm2 start tw_island_md.py --time
+#pm2 logs --lines 500
 import tomli
 import time
 import canopen
 import socketio
-
 import typing
 
 sio = socketio.Client()
@@ -34,7 +35,6 @@ class CsCanOpen:
         self.control_id = 0
         self.pre_control_id = 0
         self.control_id_temp = 0
-        self.send_key = 0
         self.map_key = False
         self.config = self.load_config(config_file)
         self.can_network = self.canopen_init(can_interface)
@@ -66,6 +66,7 @@ class CsCanOpen:
             light_node.nmt.state = 'PRE-OPERATIONAL'
             light_node.rpdo[1][0x6001].phys = 0
             light_node.rpdo[1].start(0.5)
+            light_node.rpdo[1].stop()
         print("initial complete!")
 
     def load_prox_nodes(self, config):
@@ -91,6 +92,7 @@ class CsCanOpen:
                 for light_node in self.light_node_list:
                     light_node.rpdo[1][0x6001].phys = self.control_id
                     light_node.rpdo[1].start(0.2)
+                    light_node.rpdo[1].stop()
                 self.pre_control_id = self.control_id
                 self.control_id = 0
                 self.map_key = True
@@ -109,6 +111,7 @@ class CsCanOpen:
                     for light_node in self.light_node_list:
                         light_node.rpdo[1][0x6001].phys = 0
                         light_node.rpdo[1].start(0.2)
+                        light_node.rpdo[1].stop()
                     self.map_key = False
 
     @sio.event
@@ -118,7 +121,6 @@ class CsCanOpen:
                 sio.emit('GESTURE', 'SWAP_LEFT')
                 print('swap_left')
                 self.prox_dict['left'] = 0
-
             if self.prox_dict['right'] == 1:
                 sio.emit('GESTURE', 'SWAP_RIGHT')
                 print('swap_right')

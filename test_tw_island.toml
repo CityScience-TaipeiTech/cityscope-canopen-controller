@@ -7,20 +7,20 @@ config_file = "/home/cityscpe/cityscope-canopen-controller/DS301_profile_mcu.eds
 #prox_node
 
 #top
-[[proximity.nodes]]
-node_id = 31
+#[[proximity.nodes]]
+#node_id = 31
 
-[[proximity.nodes]]
-node_id = 32
+#[[proximity.nodes]]
+#node_id = 32
 
-[[proximity.nodes]]
-node_id = 33
+#[[proximity.nodes]]
+#node_id = 33
 
-[[proximity.nodes]]
-node_id = 34
+#[[proximity.nodes]]
+#node_id = 34
 
-[[proximity.nodes]]
-node_id = 35
+#[[proximity.nodes]]
+#node_id = 35
 
 #left
 [[proximity.nodes]]
@@ -34,9 +34,6 @@ node_id = 12
 
 [[proximity.nodes]]
 node_id = 13
-
-[[proximity.nodes]]
-node_id = 36
 
 [[proximity.nodes]]
 node_id = 37
@@ -72,9 +69,11 @@ node_id = 16
 [[proximity.nodes]]
 node_id = 17
 
-#right
 [[proximity.nodes]]
-node_id = 19
+node_id = 18
+
+#right
+
 
 [[proximity.nodes]]
 node_id = 20
